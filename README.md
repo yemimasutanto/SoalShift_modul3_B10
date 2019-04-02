@@ -3,11 +3,16 @@
 ## **Soal Nomor 1**
 
 Buatlah program C yang bisa menghitung faktorial secara parallel lalu menampilkan hasilnya secara berurutan
-    Contoh:
-    ./faktorial 5 3 4
-    3! = 6
-    4! = 24
-    5! = 120
+    
+  Contoh:
+  
+  ./faktorial 5 3 4
+  
+  3! = 6
+  
+  4! = 24
+  
+  5! = 120
 
 ## Penyelesaian
 
@@ -15,19 +20,14 @@ Buatlah program C yang bisa menghitung faktorial secara parallel lalu menampilka
 ## **Soal Nomor 2**
 
 Pada suatu hari ada orang yang ingin berjualan 1 jenis barang secara private, dia memintamu membuat program C dengan spesifikasi sebagai berikut:
-  
   1. Terdapat 2 server: server penjual dan server pembeli
   
   2. 1 server hanya bisa terkoneksi dengan 1 client
-  
   3. Server penjual dan server pembeli memiliki stok barang yang selalu sama
-  
   4. Client yang terkoneksi ke server penjual hanya bisa menambah stok  
      - Cara menambah stok: client yang terkoneksi ke server penjual mengirim string “tambah” ke server lalu stok bertambah 1
-  
   5. Client yang terkoneksi ke server pembeli hanya bisa mengurangi stok
-     -  Cara mengurangi stok: client yang terkoneksi ke server pembeli mengirim string “beli” ke server lalu stok berkurang 1
-  
+     -  Cara mengurangi stok: client yang terkoneksi ke server pembeli mengirim string “beli” ke server lalu stok berkurang 1  
   6. Server pembeli akan mengirimkan info ke client yang terhubung dengannya apakah transaksi berhasil atau tidak berdasarkan ketersediaan stok
      -  Jika stok habis maka client yang terkoneksi ke server pembeli akan mencetak “transaksi gagal”
      -  Jika stok masih ada maka client yang terkoneksi ke server pembeli akan mencetak “transaksi berhasil”
