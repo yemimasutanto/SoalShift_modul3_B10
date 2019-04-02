@@ -28,7 +28,7 @@ int main(int argc,char *argv[]){
         *argv[idx]=temp;
     }
     for(int i=0;i<argc-1;i++){
-        pthread_create(&(tid[i]),NULL,&counting,(void *)argv[i+1]);
+        pthread_create(&(tid[i]),NULL,&factorial,(void *)argv[i+1]);
     }
     for(int i=0;i<argc-1;i++){
         pthread_join(tid[i],NULL);
