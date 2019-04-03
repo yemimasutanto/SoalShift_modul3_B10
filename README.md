@@ -4,17 +4,18 @@
 
 Buatlah program C yang bisa menghitung faktorial secara parallel lalu menampilkan hasilnya secara berurutan
     
-  Contoh:
-  
-  ./faktorial 5 3 4
-  
-  3! = 6
-  
-  4! = 24
-  
-  5! = 120
+Contoh:
+
+./faktorial 5 3 4
+
+3! = 6
+
+4! = 24
+
+5! = 120
 
 ## Penyelesaian
+
 
 
 ## **Soal Nomor 2**
@@ -59,6 +60,31 @@ Agmal dan Iraj merupakan 2 sahabat yang sedang kuliah dan hidup satu kostan, say
         -   **Syarat Menggunakan Lebih dari 1 Thread**
 
 ## Penyelesaian
+
+Untuk menyelesaikan soal nomer 3, diperlukan 4 thread, karena terdapat 4 fungsi, yaitu:
+
+1. void* kegiatan_agmal
+
+2. void* kegiatan_iraj
+
+3. void* WakeUp_Agmal
+
+4. void* Spirit_Iraj
+
+No 1 dan 2 fungsinya untuk menampung berapa kali perintah "Agmal Ayo Bangun" dan "Iraj Ayo Tidur" dijalankan, serta melakukan sleep selama 10s jika perintah diatas telah dijalankan 3x berturut-turut (jika perintah "Agmal Ayo Tidur" maka fungsi **menidurkan Iraj** tidak bisa dijalankan selama 10s, jika perintah "Iraj Ayo Bangun" maka fungsi **membangunkan Agmal** tidak bisa dijalankan selama 10s)
+
+No 3 dan 4 fungsinya untuk menghitung dan menampung penambahan dan pengurangan hitpoint Agmal dan Iraj (Agmal bertambah, Iraj berkurang). Fungsi ini juga akan menampilkan statement jika hitpoint dari salah satu anak telah "habis" (WakeUp_Status Agmal menjadi 100, statement yang akan ditampilkan:"Agmal Terbangun, mereka bangun pagi dan berolahraga" atau Spirit_Status Iraj menjadi 0, statement yang akan ditampilkan: "Iraj ikut tidur, dan bangun kesiangan bersama Agmal").
+
+Untuk bagian main, fitur-fitur program dibuat, yaitu :
+
+1. Statement "All status" : Menampilkan nilai dari WakeUp_Status dan Spirit Status
+
+2. Statement "Agmal Ayo Bangun" 
+
+3. Statement "Iraj Ayo Tidur"
+
+No 2 dan 3 tidak mengeluarkan output apa-apa, namun jika salah satu diketikkan secara berturut-turut hingga 4x atau lebih, maka perintah selanjutnya akan disable selama 10s.
+
 
 ## **Soal Nomor 4**
 
