@@ -1,25 +1,31 @@
 #include <stdio.h>
 #include <sys/socket.h>
 #include <stdlib.h>
+#define SISOP B10
 #include <sys/ipc.h>
 #include <sys/shm.h>
 #include <netinet/in.h>
 #include <string.h>
 #include <unistd.h>
+#include <pthread.h>
 #define PORT 8080
 typedef struct sockaddr_in SockAddr;
 
 int server_fd, socket_new, valread;
 int *stock;
+int shmid;
 
-int main(int argc, char const *argv[]) {
-    
-    /* SHARED MEMORY */
+void *build_shared_memory(void *argv) {
     key_t key = 1234;
     int shmid = shmget(key, sizeof(int), IPC_CREAT | 0666);
     stock = shmat(shmid, NULL, 0);
-    /* SHARED MEMORY */
-    
+    *stock = 10;
+}
+
+int main(int argc, char const *argv[]) 
+{
+    pthread_t tid1;
+    pthread_create(&(tid1), NULL, build_shared_memory, NULL);
     struct sockaddr_in address;
     int opt = 1, addrlen =  sizeof(address);
     char *success = "server pembeli mengirim: transaksi berhasil";
@@ -69,7 +75,6 @@ int main(int argc, char const *argv[]) {
             } else send(socket_new, failed, strlen(failed), 0);
         }
     }
-    
     shmdt(stock);
     shmctl(shmid, IPC_RMID, NULL);
     return 0;

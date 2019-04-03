@@ -2,6 +2,7 @@
 #include <sys/socket.h>
 #include <stdlib.h>
 #include <sys/ipc.h>
+#define SISOP B10
 #include <sys/shm.h>
 #include <netinet/in.h>
 #include <string.h>
@@ -11,6 +12,7 @@
 
 int server_fd, socket_new, valread;
 int *stock;
+int shmid;
 
 void *print_stock(void* argv) {
     while(1) {
@@ -19,18 +21,19 @@ void *print_stock(void* argv) {
     }
 }
 
-int main(int argc, char const *argv[]) {
-    
-    /* SHARED MEMORY */
+void *build_shared_memory(void *argv) {
     key_t key = 1234;
     int shmid = shmget(key, sizeof(int), IPC_CREAT | 0666);
     stock = shmat(shmid, NULL, 0);
     *stock = 10;
-    /* SHARED MEMORY */
+}
 
+int main(int argc, char const *argv[]) 
+{
     /* THREAD */
-    pthread_t tid1;
-
+    pthread_t tid1, tid2;
+    pthread_create(&(tid2), NULL, build_shared_memory, NULL);
+    
     struct sockaddr_in address;
     int opt = 1, addrlen =  sizeof(address);
     char *success = "server penjual mengirim: transaksi berhasil";
@@ -60,15 +63,12 @@ int main(int argc, char const *argv[]) {
         perror("Listen Error");
         exit(EXIT_FAILURE);
     }
-
-    // Accept dari client
+    pthread_create(&(tid1), NULL, print_stock, NULL);
     if ((socket_new = accept(server_fd, (struct sockaddr*)&address, (socklen_t*)&addrlen)) < 0) {
         perror("Accept Error");
         exit(EXIT_FAILURE);
     }
-
-    pthread_create(&(tid1), NULL, &print_stock, NULL);
-
+    
     while(1){        
         char buffer[1024] = {0};
         valread = read(socket_new, buffer, 1024);

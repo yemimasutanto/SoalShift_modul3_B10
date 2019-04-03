@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <sys/socket.h>
 #include <stdlib.h>
+#define SISOP B10
 #include <netinet/in.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
@@ -11,13 +12,6 @@
 
 int main(int argc, char const *argv[])
 {
-    /* SHARED MEMORY */
-    // key_t key = 1234;
-    // int *stock;
-    // int shmid = shmget(key, sizeof(int), IPC_CREAT | 0666);
-    // stock = shmat(shmid, NULL, 0);
-    /* SHARED MEMORY */
-    
     struct sockaddr_in address, serv_addr;
     int sock=0, valread;
     
@@ -59,8 +53,5 @@ int main(int argc, char const *argv[])
         valread = read(sock, buffer, 1024);
         printf("%s\n",buffer);
     }
-
-    // shmdt(stock);
-    // shmctl(shmid, IPC_RMID, NULL);
     return 0;
 }
