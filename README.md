@@ -71,7 +71,7 @@ Untuk menyelesaikan soal nomer 3, diperlukan 4 thread, karena terdapat 4 fungsi,
 
 4. void* Spirit_Iraj
 
-No 1 dan 2 fungsinya untuk menampung berapa kali perintah "Agmal Ayo Bangun" dan "Iraj Ayo Tidur" dijalankan, serta melakukan sleep selama 10s jika perintah diatas telah dijalankan 3x berturut-turut (jika perintah "Agmal Ayo Tidur" maka fungsi **menidurkan Iraj** tidak bisa dijalankan selama 10s, jika perintah "Iraj Ayo Bangun" maka fungsi **membangunkan Agmal** tidak bisa dijalankan selama 10s)
+No 1 dan 2 fungsinya untuk menampung berapa kali perintah "Agmal Ayo Bangun" dan "Iraj Ayo Tidur" dijalankan, serta melakukan sleep selama 10s jika perintah diatas telah dijalankan 3x berturut-turut (jika perintah "Agmal Ayo Tidur" maka fungsi **menidurkan Iraj** tidak bisa dijalankan selama 10s, jika perintah "Iraj Ayo Bangun" maka fungsi **membangunkan Agmal** tidak bisa dijalankan selama 10s).
 
 No 3 dan 4 fungsinya untuk menghitung dan menampung penambahan dan pengurangan hitpoint Agmal dan Iraj (Agmal bertambah, Iraj berkurang). Fungsi ini juga akan menampilkan statement jika hitpoint dari salah satu anak telah "habis" (WakeUp_Status Agmal menjadi 100, statement yang akan ditampilkan:"Agmal Terbangun, mereka bangun pagi dan berolahraga" atau Spirit_Status Iraj menjadi 0, statement yang akan ditampilkan: "Iraj ikut tidur, dan bangun kesiangan bersama Agmal").
 
@@ -83,7 +83,19 @@ Untuk bagian main, fitur-fitur program dibuat, yaitu :
 
 3. Statement "Iraj Ayo Tidur"
 
-No 2 dan 3 tidak mengeluarkan output apa-apa, namun jika salah satu diketikkan secara berturut-turut hingga 4x atau lebih, maka perintah selanjutnya akan disable selama 10s.
+No 2 dan 3 tidak mengeluarkan output apa-apa, namun jika salah satu diketikkan secara berturut-turut hingga 4x atau lebih, maka perintah lainnya akan disable selama 10s.
+
+contoh:
+
+Agmal Ayo Bangun
+
+Agmal Ayo Bangun
+
+Agmal Ayo Bangun
+
+Iraj Ayo Tidur -> (Selanjutnya perintah "Iraj Ayo Tidur" akan disable sementara selama 10s, karena Agmal Ayo Bangun telah dijalankan 3x berturut-turut, begitu juga sebaliknya akan terjadi pada perintah "Agmal Ayo Bangun" jika diberi perlakuan yang sama).
+
+![alt text](https://github.com/yemimasutanto/SoalShift_modul3_B10/blob/master/soal3/soal3.PNG)
 
 
 ## **Soal Nomor 4**
