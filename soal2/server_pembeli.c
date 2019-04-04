@@ -15,6 +15,7 @@ int server_fd, socket_new, valread;
 int *stock;
 int shmid;
 
+/* Shared Memory */
 void *build_shared_memory(void *argv) {
     key_t key = 1234;
     int shmid = shmget(key, sizeof(int), IPC_CREAT | 0666);
@@ -24,8 +25,10 @@ void *build_shared_memory(void *argv) {
 
 int main(int argc, char const *argv[]) 
 {
+    /* Thread */
     pthread_t tid1;
     pthread_create(&(tid1), NULL, build_shared_memory, NULL);
+
     struct sockaddr_in address;
     int opt = 1, addrlen =  sizeof(address);
     char *success = "server pembeli mengirim: transaksi berhasil";

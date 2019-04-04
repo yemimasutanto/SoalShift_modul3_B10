@@ -1,6 +1,7 @@
 #include<stdio.h>
 #include <termios.h>
 #include <assert.h>
+#include <sys/shm.h>
 #include<string.h>
 #define B10 <SISOP>
 #include<pthread.h>
@@ -10,6 +11,9 @@
 #include<sys/wait.h>
 #define TRUE 1
 #define FALSE 0
+#define STANDBY 1
+#define BATTLE 2
+#define SHOP 3
 
 int getch(void);                    // Key detection function
 typedef struct player {
@@ -26,10 +30,12 @@ typedef struct npc {
 Monster monster;                    // Object of monster
 AI npc;                             // Object of NPC
 int onBattle;                       // Status whether BattleScene() is running
-int shopStock;                      // Stores the stock of food in the stores
+int *shopStock;                      // Stores the stock of food in the stores
+pthread_t tid[5];
+int scene;
 /* STORES ALL THE GLOBAL VARIABLES */
 
-/* Initializing the initial value for monster's attribute */
+/* Initializing the initial value for monster's attributes */
 void initialize();
 
 /* Function to increment/decrement of monsters's attr */
@@ -38,25 +44,44 @@ void *monster_idle_onhealth(void *ptr);
 void *monster_idle_onhygiene(void *ptr);
 
 /* This is the scenes function */
-void standby_scene(int *isExit);
+void standby_scene();
 void battle_scene();
 void shop_scene();
 
+/* Function to take input */
+void *takeInput(void *ptr);
+
+/* Monster function */
+void eat();                             // Function to eat
+void take_bath();                       // Function to bath
+void *bath_cooling_down(void *ptr);
+
 int main(int argc, char const *argv[])
 {    
+    key_t key = 1234;
+    int shmid = shmget(key, sizeof(int), IPC_CREAT | 0666);
+    shopStock = shmat(shmid, NULL, 0);
+    
     // char name[100];
     // printf("Enter the name of your monster :\n>> ");    // prompt input for name's input
     // scanf("%s",name);
     // monster.name = name;
-    shopStock = 15;
-    int isExit = FALSE;                         // whether if exit is pressed
+    
+    /* Creating the thread */
+    pthread_create(&(tid[0]), NULL, takeInput, NULL);
+    pthread_create(&(tid[2]), NULL, monster_idle_onhealth, NULL);
+    pthread_create(&(tid[3]), NULL, monster_idle_onhunger, NULL);
+    pthread_create(&(tid[4]), NULL, monster_idle_onhygiene, NULL);
+
+    scene = STANDBY;
     initialize();
-    while(!isExit)
+    while(1)
     {
-        /* Go To StandBy Mode */
-        standby_scene(&isExit);
+        standby_scene();
     }
 
+    shmdt(shopStock);
+    shmctl(shmid, IPC_RMID, NULL);
     return 0;
 }
 
@@ -79,49 +104,110 @@ int getch(void) {
     return(c);
 }
 
-void standby_scene(int *isExit) {
+void *takeInput(void *ptr) {
+    char input;
+    while(1) {
+        input = getch();
+
+        if (scene == STANDBY) 
+        {
+            switch (input) {
+                case '1':
+                    eat();
+                    break;
+                case '2':
+                    take_bath();
+                    break;
+                case '3':
+                    scene = BATTLE;
+                    break;
+                case '4':
+                    scene = SHOP;
+                    break;
+                case '5':
+                    exit(EXIT_SUCCESS);
+            }
+        } else if (scene == BATTLE) 
+        {
+            switch (input) {
+                case '1':
+                    npc.health -= 20;
+                    monster.health -= 20;
+                    break;
+                case '2':
+                    scene = STANDBY;
+                    break;
+            }
+        } else if (scene == SHOP) 
+        {
+            switch (input) {
+                case '1':
+                /* Check whether there is food stock available */
+                    if (*shopStock > 0) {
+                        monster.foodStock += 1;
+                        *shopStock -= 1;            // Add the monster's food stock
+                    }
+                break;
+                case '2':
+                    scene = STANDBY;
+                    break;
+            }
+        }
+    }
+}
+
+void eat() {
+    if (monster.foodStock > 0) {
+        monster.foodStock--;
+        monster.hunger += 15;
+        if (monster.hunger > 200) monster.hunger = 200;
+    }
+}
+
+void take_bath() {
+    if (monster.bathCoolDown > 0) return;
+    monster.hygiene += 30;
+    pthread_create(&(tid[1]), NULL, bath_cooling_down, NULL);
+}
+
+void *bath_cooling_down(void *ptr) {
+    monster.bathCoolDown = 20;
+    while(monster.bathCoolDown > 0) {
+        sleep(1);
+        monster.bathCoolDown--;
+    }
+}
+
+void standby_scene() {
     /* The standby scene function starts */
     char input;                          // Used to store the input from keyboard
     while(1) 
     {
+        /* check current scene */
+        if (scene == BATTLE) battle_scene();
+        if (scene == SHOP) shop_scene();
+        
         system("clear");
-        puts("STANDBY MODE");
-        printf("-----------------------------\n");
+        puts("Standby Mode");
+        // printf("-----------------------------\n");
 
         /* Showing all status of the monsters */
         printf("Health : %d\n",monster.health);
         printf("Hunger : %d\n",monster.hunger);
         printf("Hygiene : %d\n",monster.hygiene);
         printf("Food left : %d\n",monster.foodStock);
-        printf("Bath will be ready in %ds\n",monster.bathCoolDown);
+        
+        /* Check whether bathroom is ready */
+        if (monster.bathCoolDown > 0) {
+            printf("Bath will be ready in %ds\n",monster.bathCoolDown);
+        } else {
+            printf("Bath is ready\n");
+        }
 
         puts("Choices");
         printf("1. Eat\n2. Bath\n3. Battle\n4. Shop\n5. Exit\n\n\n");
 
-        /* Achieve input from the keyboard */
-        input = getch();
-
-        /* Handling the user's input */
-        switch (input)
-        {
-            case '1':
-                break;
-            case '2':
-                break;
-            case '3':
-                break;
-            case '4':
-                shop_scene();
-                break;
-            case '5':
-                *isExit = TRUE;
-                return;
-                break;
-            default :
-                printf("\nWrong Input\n");
-                sleep(2);
-        }
-
+        sleep(1);
     }
 }
 
@@ -129,43 +215,48 @@ void shop_scene() {
     /* The shop_scene function starts */
     char input;
     while(1) {
+        /* Check current scene */
+        if (scene == STANDBY) {scene = STANDBY; return;}
+        
         system("clear");
         /* Showing food stock status */
         puts("Shop Mode");
-        printf("Shop food stock: %d\n",shopStock);
+        printf("Shop food stock: %d\n",*shopStock);
         printf("Your food stock: %d\n",monster.foodStock);
         puts("Choices");
         printf("1. Buy\n2. Back\n\n\n");
 
-        /* Achieve input from keyboard */
-        input = getch();
-
-        /* Handling input */
-        switch (input)
-        {
-            case '1':
-                /* Check whether there is food stock available */
-                if (shopStock > 0) {
-                    monster.foodStock += 1;
-                    shopStock--;            // Add the monster's food stock
-                }
-                break;
-            case '2':
-                return;
-                break;
-            default:
-                printf("\nWrong Input\n");
-                break;
-        }
-
+        sleep(1);
     }
 }
 
 void battle_scene() {
     /* The function battle_scene starts here */
+    /* Setting status onBattle becomes TRUE */
+    onBattle = TRUE;
+    npc.health = 100;
     char input;
     while(1) {
+        /* Check the current scene */
+        if (scene == STANDBY) {
+            scene = STANDBY; 
+            onBattle = FALSE; 
+            return;
+        }
+
+        if (monster.health <= 0 || npc.health <= 0) {
+            scene = STANDBY;
+        }
+        
         system("clear");
+        /* Showing Monster's Health and Enemy's Health */
+        puts("Battle Mode");
+        printf("Monster's Health: %d\n",monster.health);
+        printf("Enemy's Health: %d\n",npc.health);
+        puts("Choices");
+        printf("1. Attack\n2. Run\n\n\n");
+
+        sleep(1);
     }
 }
 
@@ -175,14 +266,17 @@ void initialize() {
     monster.hygiene = 100;
     monster.attackRate = 20;
     monster.foodStock = 0;
+    monster.bathCoolDown = 0;
 }
 
 void *monster_idle_onhunger(void *ptr) {
     /* */
     while(1) {
         sleep(10);
-        if (onBattle == FALSE)
+        if (onBattle == FALSE) {
             monster.hunger -= 5;
+            if (monster.hunger < 0) monster.hunger = 0;
+        }
     }
 }
 
@@ -199,7 +293,9 @@ void *monster_idle_onhygiene(void *ptr) {
     /* */
     while(1) {
         sleep(30);
-        if (onBattle == FALSE)
+        if (onBattle == FALSE) {
             monster.hygiene -= 10;
+            if (monster.hygiene < 0) monster.hygiene = 0;
+        }
     }
 }
