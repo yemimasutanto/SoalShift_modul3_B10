@@ -8,11 +8,11 @@
 #include<sys/wait.h>
 
 void *save_process_1(void *ptr) {
-    system("ps -aux | head -n 10 > $HOME/Documents/FolderProses1/SimpanProses1.txt");
+    system("ps -aux | head -n 11 > $HOME/Documents/FolderProses1/SimpanProses1.txt");
 }
 
 void *save_process_2(void *ptr) {
-    system("ps -aux | head -n 10 > $HOME/Documents/FolderProses2/SimpanProses2.txt");
+    system("ps -aux | head -n 11 > $HOME/Documents/FolderProses2/SimpanProses2.txt");
 }
 
 void *zip_1(void *ptr) {
