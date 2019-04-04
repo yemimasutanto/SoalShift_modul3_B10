@@ -14,6 +14,42 @@ int flag=0;
 int count_WakeUp=0;
 int count_Spirit=0;
 
+void *kegiatan_agmal (void *argv);
+void *kegiatan_iraj (void *argv);
+void *WakeUp_Agmal (void *argv);
+void *Spirit_Iraj (void *argv);
+
+int main(){
+	pthread_t tid[4];
+	pthread_create(&(tid[0]),NULL,kegiatan_agmal,NULL);
+	pthread_create(&(tid[1]),NULL,kegiatan_iraj,NULL);
+
+	while(flag==0) {
+		char perintah[50];
+		gets(perintah);
+		if (strcmp(perintah,"All Status") == 0) {
+			printf("Agmal WakeUp_Status = %d\n", WakeUp_Status);
+			printf("Iraj Spirit_Status = %d\n", Spirit_Status);
+		}
+		else if (strcmp(perintah, "Agmal Ayo Bangun") == 0){
+			if(p_agmal == 1) printf("Fitur Agmal Ayo Bangun disabled 10s\n");
+			else {
+				pthread_create(&(tid[2]), NULL, WakeUp_Agmal, NULL);
+				pthread_join(tid[2], NULL); // memastikan thread selesai mengubah flag, karena main dan thread jalan sendiri2
+			}
+		}
+		else if (strcmp(perintah,"Iraj Ayo Tidur")==0){
+			if(p_iraj == 1) printf("Fitur Iraj Ayo Tidur disabled 10s\n");
+			else {
+				pthread_create(&(tid[3]), NULL, Spirit_Iraj, NULL);
+				pthread_join(tid[3], NULL); // memastikan thread selesai mengubah flag, karena main dan thread jalan sendiri2
+			}
+		}
+	}
+	printf("Selesai!\n");
+	return 0;
+}
+
 void *kegiatan_agmal (void *argv) {
 	while(1){
 		if(count_Spirit == 3){
@@ -52,37 +88,6 @@ void *Spirit_Iraj (void *argv) {
 		printf("Iraj ikut tidur, dan bangun kesiangan bersama Agmal\n\n");
 		flag=1;
 	}
-}
-
-int main(){
-	pthread_t tid[4];
-	pthread_create(&(tid[0]),NULL,kegiatan_agmal,NULL);
-	pthread_create(&(tid[1]),NULL,kegiatan_iraj,NULL);
-
-	while(flag==0) {
-		char perintah[50];
-		gets(perintah);
-		if (strcmp(perintah,"All Status") == 0) {
-			printf("Agmal WakeUp_Status = %d\n", WakeUp_Status);
-			printf("Iraj Spirit_Status = %d\n", Spirit_Status);
-		}
-		else if (strcmp(perintah, "Agmal Ayo Bangun") == 0){
-			if(p_agmal == 1) printf("Fitur Agmal Ayo Bangun disabled 10s\n");
-			else {
-				pthread_create(&(tid[2]), NULL, WakeUp_Agmal, NULL);
-				pthread_join(tid[2], NULL); // memastikan thread selesai mengubah flag, karena main dan thread jalan sendiri2
-			}
-		}
-		else if (strcmp(perintah,"Iraj Ayo Tidur")==0){
-			if(p_iraj == 1) printf("Fitur Iraj Ayo Tidur disabled 10s\n");
-			else {
-				pthread_create(&(tid[3]), NULL, Spirit_Iraj, NULL);
-				pthread_join(tid[3], NULL); // memastikan thread selesai mengubah flag, karena main dan thread jalan sendiri2
-			}
-		}
-	}
-	printf("Selesai!\n");
-	return 0;
 }
 
 
