@@ -546,11 +546,11 @@ int main() {
 
    ```c
    void *save_process_1(void *ptr) {
-      system("ps -aux | head -n 11 > $HOME/Documents/FolderProses1/SimpanProses1.txt");
+      system("ps -aux | head -n 11 | tail -n 10 > $HOME/Documents/FolderProses1/SimpanProses1.txt");
    }
 
    void *save_process_2(void *ptr) {
-      system("ps -aux | head -n 11 > $HOME/Documents/FolderProses2/SimpanProses2.txt");
+      system("ps -aux | head -n 11 | tail -n 10 > $HOME/Documents/FolderProses2/SimpanProses2.txt");
    }
    ```
 
