@@ -97,23 +97,4 @@ void *Spirit_Iraj (void *argv) {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/* NO COPY */
-/* SISOP YEMIMA/BAYU KELOMPOK-B10 */
+/* SISOP B10 */
