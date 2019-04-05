@@ -90,7 +90,7 @@ void Sort(LL *arr, int n) {
    Misalkan ```./faktorial 3 1 2```, maka **argc** nya adalah 4 dan **argv** nya berupa string:
 
    + ```argv[0] = "./faktorial"```
-   + '''argv[1] = "3"```
+   + ```argv[1] = "3"```
    + dst.
 
 - **Mengubah argumen menjadi integer**
@@ -368,6 +368,11 @@ Pada suatu hari ada orang yang ingin berjualan 1 jenis barang secara private, di
    }
    ```
 
+- **[Source code server pembeli disini](https://github.com/yemimasutanto/SoalShift_modul3_B10/blob/master/soal2/server_pembeli.c)**
+- **[Source code server penjual disini](https://github.com/yemimasutanto/SoalShift_modul3_B10/blob/master/soal2/server_penjual.c)**
+- **[Source code client ke server penjual disini](https://github.com/yemimasutanto/SoalShift_modul3_B10/blob/master/soal2/client_2.c)**
+- **[Source code client ke server pembeli disini](https://github.com/yemimasutanto/SoalShift_modul3_B10/blob/master/soal2/client_1.c)**
+
 ------
 
 ## **Soal Nomor 3**
@@ -445,6 +450,8 @@ Buatlah sebuah program C dimana dapat menyimpan list proses yang sedang berjalan
   - Boleh menggunakan system
 
 ### Penyelesaian
+
+------------
 
 ## **Soal Nomor 5**
 
