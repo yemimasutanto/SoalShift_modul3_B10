@@ -14,15 +14,164 @@ Contoh:
 
 5! = 120
 
-## Penyelesaian
+### Penyelesaian
 
+**Source Code**
 
+```C
+/* Menampilkan faktorial secara berurutan */
+#define SISOP B10
+#include<stdio.h>
+#include<string.h>
+#include<pthread.h>
+#include<stdlib.h>
+#include<unistd.h>
+typedef long long int LL;
+
+LL fact[100];
+
+void *find_fact(void* argv);
+void Sort(LL *arr, int n);
+void printResult(LL *arr, int n);
+
+int main(int argc, char *argv[]) {
+    LL num[argc-1];
+    pthread_t tid[argc-1];
+    
+    for(int i=1; i<argc; i++) {
+        num[i-1] = atoll(argv[i]);
+    }
+    Sort(num, argc-1);
+    for(int i=0; i<argc-1; i++) {
+        LL *x = malloc(sizeof(*x));
+        *x = num[i];
+        pthread_create(&(tid[i]), NULL, find_fact, x);
+    }
+    for(int i=0; i<argc-1; i++) pthread_join(tid[i], NULL);
+    printResult(num, argc-1);
+    return 0;
+}
+
+void *find_fact(void* argv) {
+    LL num = *((long long*)argv);
+    fact[0] = fact[1] = 1;
+    for(int i=2; i<=num; i++) fact[i] = i * fact[i-1];
+}
+
+void printResult(LL *arr, int n) {
+    for(int i=0; i<n; i++)
+        printf("%lld! = %lld\n",arr[i], fact[arr[i]]);
+}
+
+void Sort(LL *arr, int n) {
+    LL key; int i, j;
+    for(i=1; i<n; i++) {
+        key = arr[i];
+        j = i-1;
+
+        while(j>=0 && arr[j] > key) {
+            arr[j+1] = arr[j];
+            j--;
+        }
+        arr[j+1] = key;
+    }
+}
+/* SISOP B10 */
+```
+
+- Soal nomor 1 menggunakan argumen sebagai input dari program. Pada bahasa **C**, agar bisa menjalankan program dengan input berupa argumen, maka pada fungsi **main** menerima parameter:
+
+   ```int main(int argc, char *argv[]) {}```
+
+   Variabel **argc** digunakan untuk menyimpan jumlah argumen yang dimasukkan.
+
+   Sedangkan variabel **argv** digunakan untuk menyimpan string argumen.
+
+   Misalkan ```./faktorial 3 1 2```, maka **argc** nya adalah 4 dan **argv** nya berupa string:
+
+   + ```argv[0] = "./faktorial"```
+   + '''argv[1] = "3"```
+   + dst.
+
+- **Mengubah argumen menjadi integer**
+   
+   Pertama yang dilakukan adalah mengubah string **argv** menjadi integer. Dapat dilakukan dengan fungsi ```atoll``` (ll adalah long long).
+
+   ```C
+   LL num[argc-1];        // Jumlah array untuk menyimpan angka
+   pthread_t tid[argc-1];
+   
+   for(int i=1; i<argc; i++) {
+      num[i-1] = atoll(argv[i]); // Mengubah argv menjadi integer
+   }
+   ```
+- **Mengurutkan array hasil konversi**
+
+   Setelah itu, mengurutkan integer-integer tadi. Disini menggunakan fungsi Sort yang dibuat sendiri. Teknik *sorting*-nya adalah **Insertion Sort**.
+
+   ```C
+   Sort(num, argc-1);
+   ```
+
+   Fungsi ```Sort``` :
+
+   ```C
+   void Sort(LL *arr, int n) {
+      LL key; int i, j;
+      for(i=1; i<n; i++) {
+         key = arr[i];
+         j = i-1;
+
+         while(j>=0 && arr[j] > key) {
+               arr[j+1] = arr[j];
+               j--;
+         }
+         arr[j+1] = key;
+      }
+   }
+   ```
+
+- **Menggunakan thread untuk mencari faktorial integer-integer**
+
+   Thread disini digunakan untuk mencari faktorial dari integer-integer hasil pengurutan. 
+
+   ```C
+   for(int i=0; i<argc-1; i++) {
+      LL *x = malloc(sizeof(*x));
+      *x = num[i];
+      pthread_create(&(tid[i]), NULL, find_fact, x);
+   }
+   for(int i=0; i<argc-1; i++) pthread_join(tid[i], NULL);
+   ```
+
+   + variabel ```LL *x``` digunakan sebagai temporary untuk kemudian dipassing ke parameter saat membuat thread. Fungsi yang digunakan untuk mencari faktorial adalah **```find_fact()```**.
+
+      ```C
+      void *find_fact(void* argv) {
+         LL num = *((long long*)argv);
+         fact[0] = fact[1] = 1;
+         for(int i=2; i<=num; i++) fact[i] = i * fact[i-1];
+      }
+      ```
+   
+   + Kemudian thread-thread dijoin.
+
+- **Hasil-hasil faktorial kemudian dicetak**
+
+   Untuk mencetak hasil faktorial, disini digunakan fungsi **```printResult()```**
+
+   ```C
+   void printResult(LL *arr, int n) {
+      for(int i=0; i<n; i++)
+         printf("%lld! = %lld\n",arr[i], fact[arr[i]]);
+   }
+   ```
+----
 
 ## **Soal Nomor 2**
 
 Pada suatu hari ada orang yang ingin berjualan 1 jenis barang secara private, dia memintamu membuat program C dengan spesifikasi sebagai berikut:
-  1. Terdapat 2 server: server penjual dan server pembeli
-  
+  1. Terdapat 2 server: server penjual dan server pembeli.
   2. 1 server hanya bisa terkoneksi dengan 1 client
   3. Server penjual dan server pembeli memiliki stok barang yang selalu sama
   4. Client yang terkoneksi ke server penjual hanya bisa menambah stok  
@@ -35,7 +184,191 @@ Pada suatu hari ada orang yang ingin berjualan 1 jenis barang secara private, di
   7. Server penjual akan mencetak stok saat ini setiap 5 detik sekali
   8. **Menggunakan thread, socket, shared memory**
 
-## Penyelesaian
+### Penyelesaian
+
+- **Membuat program untuk 2 server (server pembeli dan server penjual)**
+
+   Program server dibuat dengan menggunakan socket. Pada dasarnya, pembuatan program untuk server disini sama dengan di modul. Hanya saja, hal yang membedakan adalah alur jalannya program. Dan karena menggunakan dua server, maka terdapat perbedaan **PORT** yang digunakan oleh masing-masing server.
+
+   + Server Penjual menggunakan PORT 9000
+   + Server Pembeli menggunakan PORT 8080
+
+   **Shared Memory**
+
+   Server Penjual dan Pembeli selalu memiliki stok barang yang sama. Maka diperlukan mekanisme shared memory agar 2 server bisa saling berbagi jumlah stok yang tersisa.
+
+   Hal ini dapat dilakukan dengan cara menggunakan variabel yang diassign ke memori yang sama pada kedua program.
+
+   ```C
+   void *build_shared_memory(void *argv) {
+      key_t key = 1234;
+      int shmid = shmget(key, sizeof(int), IPC_CREAT | 0666);
+      stock = shmat(shmid, NULL, 0);
+      *stock = 10;      // Inisialisasi jumlah stock awal
+   }
+   ```
+
+   Sehingga pada kedua program dapat mengakses memori yang sama secara bersamaan.
+
+   **Pembuatan Socket Pada Server**
+
+   Agar client dapat terhubung dengan server, maka pada server perlu dibuatkan socket. Proses pembuatan socket mirip dengan di modul.
+
+   ```C
+   struct sockaddr_in address;
+   int opt = 1, addrlen =  sizeof(address);
+   char *success = "server pembeli mengirim: transaksi berhasil";
+   char *failed = "server pembeli mengirim: transaksi gagal";
+   
+   // Creating socket file descriptor
+   if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0) {
+      perror("Socket Failed");
+      exit(EXIT_FAILURE);
+   }
+
+   // Memaksa socket agar terpasang pada port 8080
+   if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt))) {
+      perror("SetSockOpt Error");
+      exit(EXIT_FAILURE);
+   }
+   address.sin_family = AF_INET;
+   address.sin_addr.s_addr = INADDR_ANY;
+   address.sin_port = htons(PORT);
+
+   // Memaksa socket agar terpasang pada port 8080
+   if (bind(server_fd, (struct sockaddr*)&address, sizeof(address)) < 0) {
+      perror("Binding Failed");
+      exit(EXIT_FAILURE);
+   }
+
+   // Listen to the client
+   if (listen(server_fd, 3) < 0) {
+      perror("Listen Error");
+      exit(EXIT_FAILURE);
+   }
+
+   // Accept dari client
+   if ((socket_new = accept(server_fd, (struct sockaddr*)&address, (socklen_t*)&addrlen)) < 0) {
+      perror("Accept Error");
+      exit(EXIT_FAILURE);
+   }
+   ```
+
+   Perintah-perintah di atas diletakkan pada masing-masing server (server penjual dan pembeli), hanya saja dibedakan berdasarkan PORT yang digunakan.
+
+   **Alur masing-masing server**
+
+   + Pada server penjual, client yang terhubung dengannya hanya bisa melakukan "tambah" stok. Maka server penjual menerima pesan dari client berupa pesan **"tambah"** dan stok di server bertambah 1.
+
+      ```c
+      while(1){        
+         char buffer[1024] = {0};
+         valread = read(socket_new, buffer, 1024);
+         if (!valread) break;
+         
+         if (strcmp(buffer, "tambah") == 0) {
+            *stock += 1;
+            send(socket_new, success, strlen(success), 0);
+         }
+      }
+      ```
+
+      > Setelah client mengirim pesan "tambah", server akan membalas dengan mengirim pesan sukses.
+
+   + Server penjual akan menampilkan stok saat ini setiap 5 detik. Ini dapat dilakukan menggunakan thread.
+
+      ```c
+      pthread_create(&(tid1), NULL, print_stock, NULL);
+      ```
+
+      dengan fungsi **```print_stock()```** adalah :
+
+      ```c
+      void *print_stock(void* argv) {
+         while(1) {
+            printf("stok saat ini sebanyak : %d\n", *stock);
+            sleep(5);
+         }
+      }
+      ```
+
+   + Sedangkan pada server pembeli, cient yang terhubung dengannya hanya bisa melakukan "beli". Maka server pembeli menerima pesan dari client berupa pesan **"beli"**.
+
+      ```c
+      while(1) {        
+         char buffer[1024] = {0};
+         valread = read(socket_new, buffer, 1024);
+         if (!valread) break;
+         if (strcmp(buffer, "beli") == 0) {
+               if (*stock > 0) {
+                  *stock -= 1;
+                  send(socket_new, success, strlen(success), 0);
+               } else send(socket_new, failed, strlen(failed), 0);
+         }
+      }
+      ```
+      > Setelah client mengirim pesan "beli", server akan membalas dengan mengirim pesan sukses jika stok masih tersedia (stok berkurang 1) dan pesan gagal jika stok sudah habis.
+
+- **Membuat program 2 client (client yang terhubung ke server penjual dan client yang terhubung ke server pembeli)**
+
+   Masing-masing client dibuat menggunakan socket. Sama seperti server, pembuatan socket disini hampir sama dengan socket yang ada pada modul. Namun dibedakan berdasarkan PORT nya saja.
+
+   + PORT 9000 merupakan client yang terhubung ke server penjual
+   + PORT 8080 merupakan client yang terhubung ke server pembeli
+
+   ```c
+   struct sockaddr_in address, serv_addr;
+   int sock=0, valread;
+   
+   char *input = (char*)malloc(sizeof(char)*1024);
+   
+   // Creating Socket (var sock is socket descriptor)
+   if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+      printf("Socket Creation Error\n");
+      return -1;
+   }
+   memset(&serv_addr, '0', sizeof(serv_addr));
+
+   serv_addr.sin_family = AF_INET;
+   serv_addr.sin_port = htons(PORT);
+
+   // Convert IPv6/IPv4 to binary
+   if (inet_pton(AF_INET, "127.0.0.1", &serv_addr.sin_addr) <= 0) {
+      printf("Invalid Address\n");
+      return -1;
+   }
+
+   if (connect(sock, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) < 0) {
+      printf("can't connect to the server\n");
+      return -1;
+   }
+   ```
+
+   Potongan kode diatas diletakka pada masing-masing client, dengan PORT yang berbeda.
+
+   **Menerima input dan mengirim pesan ke server**
+
+   Client dapat menerima input pesan yang nantinya akan dikirim ke server masing-masing. Perintahnya adalah sebagai berikut.
+
+   ```c
+   while(1) {
+      char buffer[1024] = {0};
+      int error = 0;
+      socklen_t len = sizeof(error);
+      int retVal = getsockopt(sock, SOL_SOCKET, SO_ERROR, &error, &len);
+
+      if (error != 0) {
+         printf("server disconnected\n");
+         break;
+      }
+      scanf("%s",input); // menerima input
+      send(sock, input, strlen(input), 0); // mengirim ke server
+      valread = read(sock, buffer, 1024);
+      printf("%s\n",buffer);
+   }
+   ```
+
+------
 
 ## **Soal Nomor 3**
 
@@ -59,7 +392,7 @@ Agmal dan Iraj merupakan 2 sahabat yang sedang kuliah dan hidup satu kostan, say
            *   Spirit_Status Iraj <= 0 (Tampilkan Pesan “Iraj ikut tidur, dan bangun kesiangan bersama Agmal”)
         -   **Syarat Menggunakan Lebih dari 1 Thread**
 
-## Penyelesaian
+### Penyelesaian
 
 Untuk menyelesaikan soal nomer 3, diperlukan 4 thread, karena terdapat 4 fungsi, yaitu:
 
@@ -97,6 +430,7 @@ Iraj Ayo Tidur -> (Selanjutnya perintah "Iraj Ayo Tidur" akan disable sementara 
 
 ![alt text](https://github.com/yemimasutanto/SoalShift_modul3_B10/blob/master/soal3/soal3.PNG)
 
+-------
 
 ## **Soal Nomor 4**
 
@@ -110,7 +444,7 @@ Buatlah sebuah program C dimana dapat menyimpan list proses yang sedang berjalan
   - Wajib Menggunakan Multithreading
   - Boleh menggunakan system
 
-## Penyelesaian
+### Penyelesaian
 
 ## **Soal Nomor 5**
 
