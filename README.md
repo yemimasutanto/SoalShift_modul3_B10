@@ -451,6 +451,158 @@ Buatlah sebuah program C dimana dapat menyimpan list proses yang sedang berjalan
 
 ### Penyelesaian
 
+**Menggunakan multi threading untuk menyelesaikan soal nomor 4**
+
+Source Code
+
+```c
+#include<stdio.h>
+#include<string.h>
+#define B10 SISOP
+#include<pthread.h>
+#include<stdlib.h>
+#include<unistd.h>
+#include<sys/types.h>
+#include<sys/wait.h>
+
+void *save_process_1(void *ptr) {
+    system("ps -aux | head -n 11 > $HOME/Documents/FolderProses1/SimpanProses1.txt");
+}
+
+void *save_process_2(void *ptr) {
+    system("ps -aux | head -n 11 > $HOME/Documents/FolderProses2/SimpanProses2.txt");
+}
+
+void *zip_1(void *ptr) {
+    system("zip -rmj $HOME/Documents/FolderProses1/KompresProses1.zip $HOME/Documents/FolderProses1/SimpanProses1.txt");
+}
+
+void *zip_2(void *ptr) {
+    system("zip -rmj $HOME/Documents/FolderProses2/KompresProses2.zip $HOME/Documents/FolderProses2/SimpanProses2.txt");
+}
+
+void *unzip_1(void *ptr) {
+    system("unzip $HOME/Documents/FolderProses1/KompresProses1.zip -d $HOME/Documents/FolderProses1/");
+}
+
+void *unzip_2(void *ptr) {
+    system("unzip $HOME/Documents/FolderProses2/KompresProses2.zip -d $HOME/Documents/FolderProses2/");
+}
+
+int main() {
+    pthread_t tid[6];
+    // Simpan ps -aux ke file .txt
+    pthread_create(&(tid[0]), NULL, save_process_1, NULL);
+    pthread_create(&(tid[1]), NULL, save_process_2, NULL);
+    pthread_join(tid[0], NULL);
+    pthread_join(tid[1], NULL);
+
+    // Melakukan zip
+    pthread_create(&(tid[2]), NULL, zip_1, NULL);
+    pthread_create(&(tid[3]), NULL, zip_2, NULL);
+    pthread_join(tid[2], NULL);
+    pthread_join(tid[3], NULL);
+
+    printf("Menunggu 15 detik untuk mengekstrak kembali.\n");
+    sleep(15);
+
+    // Melakukan unzip
+    pthread_create(&(tid[4]), NULL, unzip_1, NULL);
+    pthread_create(&(tid[5]), NULL, unzip_2, NULL);
+    pthread_join(tid[4], NULL);
+    pthread_join(tid[5], NULL);
+    
+    return 0;
+}
+```
+
+- **Menyimpan list proses (ps -aux) maksimal 10 proses ke dalam file SimpanProses[i].txt**
+
+   Thread yang digunakan adalah sebagai berikut.
+
+   ```c
+   void *save_process_1(void *ptr) {
+      system("ps -aux | head -n 11 > $HOME/Documents/FolderProses1/SimpanProses1.txt");
+   }
+
+   void *save_process_2(void *ptr) {
+      system("ps -aux | head -n 11 > $HOME/Documents/FolderProses2/SimpanProses2.txt");
+   }
+   ```
+
+   + Untuk menyimpan 10 proses, command yang digunakan adalah **head -n 11**, karena baris pertama adalah header dan 10 baris berikutnya adalah list proses.
+
+   Agar kedua thread di atas berjalan bersama-sama, maka dilakukan join pada kedua thread.
+
+   ```c
+   // Simpan ps -aux ke file .txt
+    pthread_create(&(tid[0]), NULL, save_process_1, NULL);
+    pthread_create(&(tid[1]), NULL, save_process_2, NULL);
+    pthread_join(tid[0], NULL);
+    pthread_join(tid[1], NULL);
+   ```
+
+- **Mengkompress file hasil .txt  menjadi file zip dengan sekaligus menghapus file .txt**
+
+   Thread yang digunakan adalah sebagai berikut.
+
+   ```c
+   void *zip_1(void *ptr) {
+      system("zip -rmj $HOME/Documents/FolderProses1/KompresProses1.zip $HOME/Documents/FolderProses1/SimpanProses1.txt");
+   }
+
+   void *zip_2(void *ptr) {
+      system("zip -rmj $HOME/Documents/FolderProses2/KompresProses2.zip $HOME/Documents/FolderProses2/SimpanProses2.txt");
+   }
+   ```
+
+   + Secara default command **zip** akan melakukan kompresi dengan mengikutsertakan struktur direktorinya juga. Agar hal itu tidak terjadi, maka ditambahkan argumen **-j**. Sedangkan, agar file yang dikompress otomatis terhapus, ditambahkan argumen **-rm**.
+
+   Agar kedua thread di atas berjalan bersama-sama, maka dilakukan join pada kedua thread.
+
+   ```c
+   // Melakukan zip
+   pthread_create(&(tid[2]), NULL, zip_1, NULL);
+   pthread_create(&(tid[3]), NULL, zip_2, NULL);
+   pthread_join(tid[2], NULL);
+   pthread_join(tid[3], NULL);
+   ```
+
+- **Menunggu 15 detik sebelum mengekstrak**
+
+   Menggunakan fungsi sleep() selama 15 detik.
+
+   ```c
+   printf("Menunggu 15 detik untuk mengekstrak kembali.\n");
+   sleep(15);
+   ```
+
+- **Melakukan ekstrak file .zip**
+
+   Thread yang digunakan adalah sebagai berikut.
+
+   ```c
+   void *unzip_1(void *ptr) {
+      system("unzip $HOME/Documents/FolderProses1/KompresProses1.zip -d $HOME/Documents/FolderProses1/");
+   }
+
+   void *unzip_2(void *ptr) {
+      system("unzip $HOME/Documents/FolderProses2/KompresProses2.zip -d $HOME/Documents/FolderProses2/");
+   }
+   ```
+
+   + Ekstraksi dilakukan menggunakan command unzip kemudian ditentukan destinasi hasil ekstrak menggunakan **-d**.
+
+   Agar kedua thread di atas berjalan bersama-sama, maka dilakukan join pada kedua thread.
+
+   ```c
+   // Melakukan unzip
+   pthread_create(&(tid[4]), NULL, unzip_1, NULL);
+   pthread_create(&(tid[5]), NULL, unzip_2, NULL);
+   pthread_join(tid[4], NULL);
+   pthread_join(tid[5], NULL);
+   ```
+
 ------------
 
 ## **Soal Nomor 5**

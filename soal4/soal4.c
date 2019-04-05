@@ -32,27 +32,27 @@ void *unzip_2(void *ptr) {
 }
 
 int main() {
-    pthread_t tid1, tid2;
+    pthread_t tid[6];
     // Simpan ps -aux ke file .txt
-    pthread_create(&(tid1), NULL, save_process_1, NULL);
-    pthread_create(&(tid2), NULL, save_process_2, NULL);
-    pthread_join(tid1, NULL);
-    pthread_join(tid2, NULL);
+    pthread_create(&(tid[0]), NULL, save_process_1, NULL);
+    pthread_create(&(tid[1]), NULL, save_process_2, NULL);
+    pthread_join(tid[0], NULL);
+    pthread_join(tid[1], NULL);
 
     // Melakukan zip
-    pthread_create(&(tid1), NULL, zip_1, NULL);
-    pthread_create(&(tid2), NULL, zip_2, NULL);
-    pthread_join(tid1, NULL);
-    pthread_join(tid2, NULL);
+    pthread_create(&(tid[2]), NULL, zip_1, NULL);
+    pthread_create(&(tid[3]), NULL, zip_2, NULL);
+    pthread_join(tid[2], NULL);
+    pthread_join(tid[3], NULL);
 
     printf("Menunggu 15 detik untuk mengekstrak kembali.\n");
     sleep(15);
 
     // Melakukan unzip
-    pthread_create(&(tid1), NULL, unzip_1, NULL);
-    pthread_create(&(tid2), NULL, unzip_2, NULL);
-    pthread_join(tid1, NULL);
-    pthread_join(tid2, NULL);
+    pthread_create(&(tid[4]), NULL, unzip_1, NULL);
+    pthread_create(&(tid[5]), NULL, unzip_2, NULL);
+    pthread_join(tid[4], NULL);
+    pthread_join(tid[5], NULL);
     
     return 0;
 }
