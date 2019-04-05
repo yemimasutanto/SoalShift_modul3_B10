@@ -268,7 +268,7 @@ Pada suatu hari ada orang yang ingin berjualan 1 jenis barang secara private, di
          
          if (strcmp(buffer, "tambah") == 0) {
             *stock += 1;
-            send(socket_new, success, strlen(success), 0);
+            // send(socket_new, success, strlen(success), 0);
          }
       }
       ```
@@ -295,7 +295,7 @@ Pada suatu hari ada orang yang ingin berjualan 1 jenis barang secara private, di
    + Sedangkan pada server pembeli, cient yang terhubung dengannya hanya bisa melakukan "beli". Maka server pembeli menerima pesan dari client berupa pesan **"beli"**.
 
       ```c
-      while(1) {        
+      while(1){        
          char buffer[1024] = {0};
          valread = read(socket_new, buffer, 1024);
          if (!valread) break;
@@ -304,6 +304,8 @@ Pada suatu hari ada orang yang ingin berjualan 1 jenis barang secara private, di
                   *stock -= 1;
                   send(socket_new, success, strlen(success), 0);
                } else send(socket_new, failed, strlen(failed), 0);
+         } else {
+               send(socket_new, failed, strlen(failed), 0);
          }
       }
       ```
@@ -350,6 +352,8 @@ Pada suatu hari ada orang yang ingin berjualan 1 jenis barang secara private, di
 
    Client dapat menerima input pesan yang nantinya akan dikirim ke server masing-masing. Perintahnya adalah sebagai berikut.
 
+   **Client Pembeli**
+
    ```c
    while(1) {
       char buffer[1024] = {0};
@@ -366,6 +370,24 @@ Pada suatu hari ada orang yang ingin berjualan 1 jenis barang secara private, di
       valread = read(sock, buffer, 1024);
       printf("%s\n",buffer);
    }
+   ```
+
+   **Client Penjual**
+
+   ```c
+   while(1) {
+        char buffer[1024] = {0};
+        int error = 0;
+        socklen_t len = sizeof(error);
+        int retVal = getsockopt(sock, SOL_SOCKET, SO_ERROR, &error, &len);
+
+        if (error != 0) {
+            printf("server disconnected\n");
+            break;
+        }
+        scanf("%s",input);
+        send(sock, input, strlen(input), 0);
+    }
    ```
 
 - **[Source code server pembeli disini](https://github.com/yemimasutanto/SoalShift_modul3_B10/blob/master/soal2/server_pembeli.c)**
@@ -607,3 +629,454 @@ int main() {
 
 ## **Soal Nomor 5**
 
+### Penyelesaian
+
+**Spesifikasi Program :**
+
+- Terdapat dua karakter, yakni monster dan musuh (NPC).
+- Monster mempunyai atribut berupa :
+   + **Health Status**
+      
+      Nilai awal-> 200 (max). Berkurang 5 setiap 10 detik (Pada saat standby)
+
+   + **Hygiene Status**
+
+      Nilai awal -> 100. Berkurang 10 setiap 30 detik (Pada saat standby)
+
+   + **Hunger Status**
+
+      Nilai awal -> 300. Bertambah 5 setiap 10 detik (Pada saat standby)
+
+- NPC mempunyai atribut berupa **Health** yang hanya digunakan pada saat Battle. Nilai awalnya adalah 100.
+
+- Pemain dapat memberi makan monster dan memandikan monster.
+
+   + Pemain memberi makan monster dengan stok makanan yang terbatas, dan makanan ini dapat dibeli di toko. Setelah memberi makan, **Hunger Status** bertambah 15.
+
+   + Pemain dapat memandikan monster pada Bath. Jika pemain memandikan monster, maka akan ada jeda waktu pada Bath selama 20 detik, sebelum pemain bisa memandikan kembali monsternya. Dan **Hygiene Status** bertambah 30.
+
+- Terdapat 3 scene dalam game ditambah 1 scene di luar game.
+
+   + **Scene Standby**
+      
+      Pada scene standby, layar menampilkan Hunger, Hygiene, Health, Stok Makanan, Status Kamar mandi. Dengan 5 menu yakni: Eat, Bath, Battle, Shop, Exit
+
+   + **Scene Shop (Sebagai Pembeli/In Game)**
+
+      Pada scene shop, layar menampilkan Shop food stock dan Stok makanan monster. Dengan 2 menu yakni: Buy, Back.
+
+   + **Scene Penjual (Program terpisah)**
+
+      Pada scene penjual, layar menampilkan stok toko. Dengan 2 menu yakni: Restock, Exit.
+
+   + **Scene Battle**
+
+      Pada scene battle, layar menampilkan status health musuh dan status health monster (pemain). Dengan 2 menu yakni: Attack dan Run.
+
+- Dalam mode battle, pemain dapat menyerang musuh. Jika menyerang, maka musuh akan menyerang balik. Nilai serang masing masing karakter adalah 20.
+
+### Implementasi
+
+- Hal paling mendasar pertama kali adalah membuat objek karakter. Karena bahasa C tidak menyediakan mekanisme untuk membuat objek, maka digunakan **```struct```**.
+
+   ```c
+   typedef struct player {
+      int health, hunger, hygiene;
+      int foodStock, bathCoolDown, attackRate;
+      char *name;
+   } Monster;
+
+   typedef struct npc {
+      int health, attackRate;
+   } AI;
+
+   Monster monster;                    // Object of monster
+   AI npc;                             // Object of NPC
+   ```
+
+- Kemudian, karena shop versi pembeli ini mempunyai ketersediaan stock yang bergantung pada shop penjual yang mana berada pada program yang berbeda, maka perlu dilakukan sharing memory.
+
+   ```c
+   int *shopStock;
+   
+   key_t key = 1234;
+   int shmid = shmget(key, sizeof(int), IPC_CREAT | 0666);
+   shopStock = shmat(shmid, NULL, 0);
+   ```
+
+- Mekanisme *key-press detection* diimplementasikan dengan fungsi **```int getch(void)```**. (Didapatkan dari Internet)
+
+   ```c
+   int getch(void) {
+      int c=0;
+
+      struct termios org_opts, new_opts;
+      int res=0;
+         //-----  store old settings -----------
+      res=tcgetattr(STDIN_FILENO, &org_opts);
+      assert(res==0);
+         //---- set new terminal parms --------
+      memcpy(&new_opts, &org_opts, sizeof(new_opts));
+      new_opts.c_lflag &= ~(ICANON | ECHO | ECHOE | ECHOK | ECHONL | ECHOPRT | ECHOKE | ICRNL);
+      tcsetattr(STDIN_FILENO, TCSANOW, &new_opts);
+      c=getchar();
+         //------  restore old settings ---------
+      res=tcsetattr(STDIN_FILENO, TCSANOW, &org_opts);
+      assert(res==0);
+      return(c);
+   }
+   ```
+
+- Lalu scene-scene di-handle oleh fungsi-fungsi berbeda. Fungsi-fungsi untuk menghandle scene.
+
+   + **Scene Standby**
+
+      ```c
+      void standby_scene() {
+         /* The standby scene function starts */
+         
+         while(1) 
+         {
+            /* check current scene */
+            if (scene == BATTLE) battle_scene();
+            if (scene == SHOP) shop_scene();
+            
+            system("clear");
+            puts("Standby Mode");
+            // printf("-----------------------------\n");
+
+            /* Showing all status of the monsters */
+            printf("Health : %d\n",monster.health);
+            printf("Hunger : %d\n",monster.hunger);
+            printf("Hygiene : %d\n",monster.hygiene);
+            printf("Food left : %d\n",monster.foodStock);
+            
+            /* Check whether bathroom is ready */
+            if (monster.bathCoolDown > 0) {
+                  printf("Bath will be ready in %ds\n",monster.bathCoolDown);
+            } else {
+                  printf("Bath is ready\n");
+            }
+
+            puts("Choices");
+            printf("1. Eat\n2. Bath\n3. Battle\n4. Shop\n5. Exit\n\n\n");
+
+            sleep(1);
+         }
+      }
+      ```
+
+   + **Scene Battle**
+
+      ```c
+      void battle_scene() {
+         /* The function battle_scene starts here */
+         /* Setting status onBattle becomes TRUE */
+         onBattle = TRUE;
+         npc.health = 100;
+         char input;
+         while(1) {
+            /* Check the current scene */
+            if (scene == STANDBY) {
+                  scene = STANDBY; 
+                  onBattle = FALSE; 
+                  return;
+            }
+
+            if (monster.health <= 0) {
+                  scene = STANDBY;
+                  monster.health = 0;
+            }
+            if (npc.health <= 0) {
+                  scene = STANDBY;
+                  npc.health = 0;
+            }
+            
+            system("clear");
+            /* Showing Monster's Health and Enemy's Health */
+            puts("Battle Mode");
+            printf("Monster's Health: %d\n",monster.health);
+            printf("Enemy's Health: %d\n",npc.health);
+            puts("Choices");
+            printf("1. Attack\n2. Run\n\n\n");
+
+            sleep(1);
+         }
+      }
+      ```
+
+   + **Scene Shop (In-Game)**
+
+      ```c
+      void shop_scene() {
+         /* The shop_scene function starts */
+         char input;
+         while(1) {
+            /* Check current scene */
+            if (scene == STANDBY) {scene = STANDBY; return;}
+            
+            system("clear");
+            /* Showing food stock status */
+            puts("Shop Mode");
+            printf("Shop food stock: %d\n",*shopStock);
+            printf("Your food stock: %d\n",monster.foodStock);
+            puts("Choices");
+            printf("1. Buy\n2. Back\n\n\n");
+
+            sleep(1);
+         }
+      }
+      ```
+
+- Pada saat program mulai berjalan, pemain dapat memasukkan nama dari monster dan semua initial value dari monster diisi sesuai nilai masing masing (menggunakan fungsi **```initialize()```**).
+
+   Memasukkan Nama :
+
+   ```c
+   char name[100];
+   printf("Enter the name of your monster :\n>> ");    // prompt input for name's input
+   scanf("%s",name);
+   monster.name = name;
+   ```
+
+   Fungsi Initalize() :
+
+   ```c
+   void initialize() {
+      monster.hunger = 200;
+      monster.health = 300;
+      monster.hygiene = 100;
+      monster.attackRate = 20;
+      monster.foodStock = 0;
+      monster.bathCoolDown = 0;
+   }
+   ```
+
+- Selain itu, dijalankan juga fungsi untuk menerima input. Pada program ini, fungsi untuk menerima input dijalankan secara paralel dengan jalannya program. Sehingga input diterima berdasarkan scene yang sedang aktif saat ini.
+
+   + Thread untuk menerima input dijalankan.
+
+      ```c
+      pthread_create(&(tid[0]), NULL, takeInput, NULL);
+
+      void *takeInput(void *ptr) {
+         char input;
+         while(1) {
+            input = getch();
+
+            if (scene == STANDBY) 
+            {
+                  switch (input) {
+                     case '1':
+                        eat();
+                        break;
+                     case '2':
+                        take_bath();
+                        break;
+                     case '3':
+                        scene = BATTLE;
+                        break;
+                     case '4':
+                        scene = SHOP;
+                        break;
+                     case '5':
+                        exit(EXIT_SUCCESS);
+                  }
+            } else if (scene == BATTLE) 
+            {
+                  switch (input) {
+                     case '1':
+                        npc.health -= 20;
+                        monster.health -= 20;
+                        break;
+                     case '2':
+                        scene = STANDBY;
+                        break;
+                  }
+            } else if (scene == SHOP) 
+            {
+                  switch (input) {
+                     case '1':
+                     /* Check whether there is food stock available */
+                        if (*shopStock > 0) {
+                              monster.foodStock += 1;
+                              *shopStock -= 1;            // Add the monster's food stock
+                        }
+                     break;
+                     case '2':
+                        scene = STANDBY;
+                        break;
+                  }
+            }
+         }
+      }
+      ```
+
+      > Input diseleksi berdasarkan scene yang aktif.
+
+   + Pada saat awal program, scene awalnya adalah scene **STANDBY**, sehingga scene di set menjadi STANDBY.
+
+      ```c
+      scene = STANDBY;
+      initialize();
+      while(1)
+      {
+         standby_scene();
+      }
+      ```
+
+- Pada saat standby atau dengan kata lain tidak dalam mode battle, masing-masing status monster berkurang/bertambah sesuai aturannya. Kejadian ini dijalankan secara paralel menggunakan thread dengan fungsi thread masing-masing. Dengan memeriksa apakah statusnya sedang dalam battle atau tidak.
+
+   ```c
+   void *monster_idle_onhunger(void *ptr) {
+      /* */
+      while(1) {
+         sleep(10);
+         if (onBattle == FALSE) {
+               monster.hunger -= 5;
+               if (monster.hunger < 0) monster.hunger = 0;
+         }
+      }
+   }
+
+   void *monster_idle_onhealth(void *ptr) {
+      /* */
+      while(1) {
+         sleep(10);
+         if (onBattle == FALSE) 
+               monster.health += 5;
+      }
+   }
+
+   void *monster_idle_onhygiene(void *ptr) {
+      /* */
+      while(1) {
+         sleep(30);
+         if (onBattle == FALSE) {
+               monster.hygiene -= 10;
+               if (monster.hygiene < 0) monster.hygiene = 0;
+         }
+      }
+   }
+
+   pthread_create(&(tid[2]), NULL, monster_idle_onhealth, NULL);
+   pthread_create(&(tid[3]), NULL, monster_idle_onhunger, NULL);
+   pthread_create(&(tid[4]), NULL, monster_idle_onhygiene, NULL);
+   ```
+
+- Selain itu, spesifikasi pogramnya adalah ketika fitur mandi dijalankan, maka akan ada cooldown selama 20 detik sebelum bisa mandi kembali. Hal ini dapat dilakukan dengan thread.
+
+   + Pada saat status scene sedang dalam keadaan STANDBY, jika menekan fitur Bath maka akan memanggil fungsi ```take_bath()```:
+
+      ```c
+      input = getch();
+      if (scene == STANDBY) 
+      {
+         switch (input) {
+               case '1':
+                  eat();
+                  break;
+               case '2':
+                  take_bath();
+                  break;
+               case '3':
+                  scene = BATTLE;
+                  break;
+               case '4':
+                  scene = SHOP;
+                  break;
+               case '5':
+                  exit(EXIT_SUCCESS);
+         }
+      }
+      ```
+
+      Fungsi take_bath() sebagai berikut :
+
+      ```c
+      void take_bath() {
+         if (monster.bathCoolDown > 0) return;
+         monster.hygiene += 30;
+         pthread_create(&(tid[1]), NULL, bath_cooling_down, NULL);
+      }
+      ```
+
+      Pada fungsi **```take_bath()```** membuat thread untuk menjalankan cooldown bathroom.
+
+      ```c
+      void *bath_cooling_down(void *ptr) {
+         monster.bathCoolDown = 20;
+         while(monster.bathCoolDown > 0) {
+            sleep(1);
+            monster.bathCoolDown--;
+         }
+      }
+      ```
+
+      > Saat menjalankan fungsi cooldown, status bathCoolDown di set menjadi 20. Dan setiap detik dikurangi1 hingga mencapai nilai 0.
+
+- Selain itu, pemain dapat memberi makan monster. Fungsi untuk memberi makan adalah fungsi **```eat()```**.
+
+   ```c
+   void eat() {
+      /* Checking if foodStock is available */
+      if (monster.foodStock > 0) {
+         monster.foodStock--;
+         monster.hunger += 15;
+         if (monster.hunger > 200) monster.hunger = 200;
+      }
+   }
+   ```
+
+   > Pada fungsi tersebut, pertama diperiksa apakah ada stock makanan tersedia. Jika tersedia, maka stok makanan berkurang 1 dan status hunger bertambah 15. Karena maksimal status hunger adalah 200, maka ketika sudah melebihi 200, tetap diset 200.
+
+- **Program untuk shop penjual**
+
+   + Pada shop penjual,program membuat shared memory agar stok makanan pada game dan pada program penjual saling terintegrasi.
+
+      ```c
+      /* Shared Memory */
+      key_t key = 1234;
+      int shmid = shmget(key, sizeof(int), IPC_CREAT | 0666);
+      foodStock = shmat(shmid, NULL, 0);
+
+      //
+      //
+      //
+
+      shmdt(foodStock);
+      shmctl(shmid, IPC_RMID, NULL);
+      ```
+
+   + Kemudian menampilkan scene penjual menggunakan fungsi **```merchant_scene()```**.
+
+      ```c
+      void merchant_scene() {
+         /* Merchant Scene Initiated */
+         char input;
+         while(1) {
+            system("clear");
+            puts("Shop");
+            printf("Food stock : %d\n",*foodStock);
+            puts("Choices");
+            printf("1. Restock\n2. Exit\n\n\n");
+
+            /* Achieving Input from keyboard */
+            input = getch();
+
+            switch (input)
+            {
+                  case '1':
+                     *foodStock = 35;
+                     break;
+                  case '2':
+                     return;
+                     break;
+                  default:
+                     break;
+            }
+         }
+      }
+      ```
+- [Source code game](https://github.com/yemimasutanto/SoalShift_modul3_B10/blob/master/soal5/soal5.c)
+- [Source code penjual](https://github.com/yemimasutanto/SoalShift_modul3_B10/blob/master/soal5/merchant.c)

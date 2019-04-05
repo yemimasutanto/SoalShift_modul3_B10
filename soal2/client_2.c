@@ -50,8 +50,6 @@ int main(int argc, char const *argv[])
         }
         scanf("%s",input);
         send(sock, input, strlen(input), 0);
-        valread = read(sock, buffer, 1024);
-        printf("%s\n",buffer);
     }
     return 0;
 }

@@ -76,6 +76,8 @@ int main(int argc, char const *argv[])
                 *stock -= 1;
                 send(socket_new, success, strlen(success), 0);
             } else send(socket_new, failed, strlen(failed), 0);
+        } else {
+            send(socket_new, failed, strlen(failed), 0);
         }
     }
     shmdt(stock);

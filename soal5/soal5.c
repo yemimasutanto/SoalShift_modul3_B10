@@ -62,10 +62,10 @@ int main(int argc, char const *argv[])
     int shmid = shmget(key, sizeof(int), IPC_CREAT | 0666);
     shopStock = shmat(shmid, NULL, 0);
     
-    // char name[100];
-    // printf("Enter the name of your monster :\n>> ");    // prompt input for name's input
-    // scanf("%s",name);
-    // monster.name = name;
+    char name[100];
+    printf("Enter the name of your monster :\n>> ");    // prompt input for name's input
+    scanf("%s",name);
+    monster.name = name;
     
     /* Creating the thread */
     pthread_create(&(tid[0]), NULL, takeInput, NULL);
@@ -180,7 +180,7 @@ void *bath_cooling_down(void *ptr) {
 
 void standby_scene() {
     /* The standby scene function starts */
-    char input;                          // Used to store the input from keyboard
+    
     while(1) 
     {
         /* check current scene */
@@ -244,8 +244,13 @@ void battle_scene() {
             return;
         }
 
-        if (monster.health <= 0 || npc.health <= 0) {
+        if (monster.health <= 0) {
             scene = STANDBY;
+            monster.health = 0;
+        }
+        if (npc.health <= 0) {
+            scene = STANDBY;
+            npc.health = 0;
         }
         
         system("clear");

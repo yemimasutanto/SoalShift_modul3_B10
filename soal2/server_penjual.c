@@ -76,8 +76,8 @@ int main(int argc, char const *argv[])
         
         if (strcmp(buffer, "tambah") == 0) {
             *stock += 1;
-            send(socket_new, success, strlen(success), 0);
-        }
+            //send(socket_new, success, strlen(success), 0);
+        } 
     }
     
     shmdt(stock);
