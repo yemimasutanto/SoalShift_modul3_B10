@@ -435,6 +435,8 @@ Iraj Ayo Tidur -> (Selanjutnya perintah "Iraj Ayo Tidur" akan disable sementara 
 
 ![alt text](https://github.com/yemimasutanto/SoalShift_modul3_B10/blob/master/soal3/soal3.PNG)
 
+- **[Source code disini](https://github.com/yemimasutanto/SoalShift_modul3_B10/blob/master/soal3/soal3.c)**
+
 -------
 
 ## **Soal Nomor 4**
